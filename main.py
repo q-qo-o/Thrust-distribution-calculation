@@ -79,7 +79,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 初始化界面
         self.load_propellers_info_cache()
-
+        self.lineEdit_input.setText(f"{len(self.item_widgets) + 1}")
 
     def add_item_widget(self, id, params):
         # 创建条目部件
@@ -115,7 +115,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.add_item_widget(text, [0 for i in range(5)])
 
             # 清空输入框并聚焦
-            self.lineEdit_input.clear()
+            self.lineEdit_input.setText(f"{len(self.item_widgets) + 1}")
             self.lineEdit_input.setFocus()
 
             self.save_propellers_info_cache()
@@ -176,6 +176,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.item_widgets.remove(item_widget)
             item_widget.deleteLater()
 
+            self.save_propellers_info_cache()
+
     def edit_item(self, item_widget):
         """编辑指定条目 - 弹出独立窗口"""
         # 获取当前文本
@@ -192,6 +194,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if ret is not None:
                 item_widget.label.setText(ret[0])
                 item_widget.params = ret[1]
+
+                self.save_propellers_info_cache()
             else:
                 QMessageBox.warning(self, "警告", "内容输入有误")
 
@@ -213,7 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.thrust_matrix is None:
             try:
                 generalized_force_matrix = [generalized_force_direction(i.params) for i in self.item_widgets]
-                generalized_force_matrix = np.array(generalized_force_matrix).T               
+                generalized_force_matrix = np.array(generalized_force_matrix).T
                 self.thrust_matrix = np.linalg.pinv(generalized_force_matrix)
             except np.linalg.LinAlgError as e:
                 QMessageBox.critical(self, "计算错误", f"无法计算伪逆矩阵: {str(e)}")
@@ -221,6 +225,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.thrust_matrix is not None:
             generate_files("./output", self.thrust_matrix)
             QMessageBox.information(self, "文件生成成功", "存储路径：./output")
+
+            self.save_propellers_info_cache()
 
     def show_matrix(self):
         generalized_force_matrix = [generalized_force_direction(i.params) for i in self.item_widgets]
@@ -231,6 +237,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except np.linalg.LinAlgError as e:
             QMessageBox.critical(self, "计算错误", f"无法计算伪逆矩阵: {str(e)}")
             return
+
+        self.save_propellers_info_cache()
 
         self.matrix_display_window = MatrixDisplayWindow(self.thrust_matrix)  # 保存为实例变量以防垃圾回收
         self.matrix_display_window.show()
